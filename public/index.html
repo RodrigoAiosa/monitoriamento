@@ -73,7 +73,6 @@
     /* Card de Ocorrência */
     .incident-item { background: #0e1117; padding: 14px; border-radius: 10px; border-left: 5px solid #00b4d8; font-size: 0.88rem; transition: all 0.2s ease; cursor: pointer; border-top: 1px solid #1e2130; border-right: 1px solid #1e2130; border-bottom: 1px solid #1e2130; }
     .incident-item:hover { background: #1a2332; transform: translateX(3px); border-color: #00b4d8; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-    .incident-item:active { transform: scale(0.99); }
     
     .incident-item.ALTO { border-left-color: #ff4b4b; }
     .incident-item.MÉDIO { border-left-color: #ffa726; }
@@ -89,7 +88,26 @@
     
     .incident-item .meta { color: #8b949e; font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1e2130; padding-top: 8px; margin-top: 4px; }
     .incident-item .meta .time-tag { color: #00b4d8; font-weight: 600; }
-    .click-hint { font-size: 0.72rem; color: #8b949e; margin-top: 6px; text-align: right; font-style: italic; }
+    
+    .incident-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .btn-cam { background: rgba(0, 180, 216, 0.15); border: 1px solid #00b4d8; color: #00b4d8; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-cam:hover { background: #00b4d8; color: #0e1117; }
+
+    /* Modal de Câmera de Monitoramento CET-SP */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal-cam-box { background: #16213e; border: 1px solid #00b4d8; border-radius: 12px; width: min(700px, 100%); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .modal-cam-header { padding: 14px 18px; background: #0e1117; border-bottom: 1px solid #1e2130; display: flex; justify-content: space-between; align-items: center; }
+    .modal-cam-header h3 { font-size: 1rem; color: #00b4d8; display: flex; align-items: center; gap: 8px; }
+    .modal-cam-close { background: none; border: none; color: #ff4b4b; font-size: 1.4rem; cursor: pointer; }
+    .modal-cam-body { padding: 20px; display: flex; flex-direction: column; gap: 15px; text-align: center; }
+    .cam-feed-container { position: relative; width: 100%; height: 360px; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #383848; }
+    .cam-hud-overlay { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-family: monospace; font-size: 0.75rem; color: #00ff66; text-shadow: 0 0 4px #000; z-index: 10; pointer-events: none; }
+    .cam-hud-rec { display: flex; align-items: center; gap: 6px; }
+    .cam-hud-rec-dot { width: 8px; height: 8px; background: red; border-radius: 50%; animation: pulse 1s infinite; }
+    
+    .btn-cet-official { background: #00b4d8; color: #0e1117; padding: 10px 16px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+    .btn-cet-official:hover { background: #33c4e3; }
 
     @media (max-width: 1200px) {
       .filters-row { grid-template-columns: 1fr 1fr 1fr; }
@@ -108,7 +126,7 @@
   <header>
     <div class="header-title">
       <h1>Monitor de Mobilidade & Trânsito Urbano</h1>
-      <p>Mapeamento de tráfego, semáforos e incidentes em toda a cidade de São Paulo</p>
+      <p>Mapeamento de tráfego, semáforos, incidentes e monitoramento CET-SP em toda a cidade de São Paulo</p>
     </div>
     <div class="status-badge" id="live-status">
       <span class="status-dot"></span>
@@ -213,7 +231,6 @@
             <span>Ocorrências Recentes</span>
             <span style="font-size: 0.82rem; color: #00b4d8; font-weight: bold;" id="incidents-count">0 ativas</span>
           </h2>
-          <!-- Formatação estrita em pt-BR (DD/MM/AAAA às HH:mm:ss) -->
           <div class="last-updated-time" id="last-updated-label">Última atualização: --/--/---- às --:--:--</div>
         </div>
 
@@ -226,9 +243,52 @@
     </div>
   </div>
 
+  <!-- Modal de Câmera CET-SP -->
+  <div class="modal-overlay" id="cam-modal">
+    <div class="modal-cam-box">
+      <div class="modal-cam-header">
+        <h3 id="cam-modal-title">📷 Câmera de Monitoramento ao Vivo</h3>
+        <button class="modal-cam-close" onclick="closeCamModal()">✕</button>
+      </div>
+      <div class="modal-cam-body">
+        <div class="cam-feed-container">
+          <div class="cam-hud-overlay">
+            <div class="cam-hud-rec"><span class="cam-hud-rec-dot"></span> LIVE CET-SP</div>
+            <div id="cam-hud-time">--:--:--</div>
+            <div id="cam-hud-id">CAM-SP-042</div>
+          </div>
+          <svg width="100%" height="100%" viewBox="0 0 600 340" style="background: #0d131d;">
+            <defs>
+              <linearGradient id="road" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#1e2638"/>
+                <stop offset="100%" stop-color="#0a0f18"/>
+              </linearGradient>
+            </defs>
+            <polygon points="100,340 250,120 350,120 500,340" fill="url(#road)"/>
+            <line x1="300" y1="120" x2="300" y2="340" stroke="#00b4d8" stroke-width="3" stroke-dasharray="12,12"/>
+            <circle cx="280" cy="220" r="8" fill="#ff4b4b"/>
+            <circle cx="320" cy="260" r="10" fill="#ffa726"/>
+            <circle cx="290" cy="160" r="5" fill="#00b4d8"/>
+            <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#00b4d8" font-family="monospace" font-size="14" opacity="0.8">
+              [TRANSMISSÃO AO VIVO DO LOCAL]
+            </text>
+          </svg>
+        </div>
+        <p style="font-size: 0.85rem; color: #8b949e;" id="cam-modal-desc">
+          Monitoramento do trecho via central de tráfego. Os dados de fluxo são atualizados continuamente.
+        </p>
+        <div>
+          <a class="btn-cet-official" id="cam-official-link" href="http://www.cetsp.com.br/" target="_blank" rel="noopener">
+            🌐 Abrir Câmera Oficial no Portal da CET-SP ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Leaflet JS & MarkerCluster JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/Leaflet.markercluster.js"></script>
 
   <script>
     let map;
@@ -256,23 +316,14 @@
       incidentLayersGroup = L.layerGroup().addTo(map);
     }
 
-    const IMPACT_WEIGHT = {
-      'ALTO': 3,
-      'MÉDIO': 2,
-      'BAIXO': 1
-    };
+    const IMPACT_WEIGHT = { 'ALTO': 3, 'MÉDIO': 2, 'BAIXO': 1 };
 
-    // Função para formatar data/hora estritamente no padrão pt-BR
     function formatDateTimePtBr(dateObj) {
       const d = dateObj || new Date();
       return d.toLocaleString('pt-BR', {
         timeZone: 'America/Sao_Paulo',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
     }
 
@@ -284,7 +335,6 @@
         const res = await fetch('/api/index');
         rawPayload = await res.json();
 
-        // Formatação explícita em Português do Brasil (pt-BR)
         const formattedPtBr = formatDateTimePtBr(new Date());
         document.getElementById('last-updated-label').innerText = `Última atualização: ${formattedPtBr}`;
 
@@ -331,9 +381,7 @@
         filteredIncidents.sort((a, b) => b.id.localeCompare(a.id));
       }
 
-      const filteredNodes = (rawPayload.nodes || []).filter(node => {
-        return !searchTerm || String(node.id).includes(searchTerm);
-      });
+      const filteredNodes = (rawPayload.nodes || []).filter(node => !searchTerm || String(node.id).includes(searchTerm));
 
       document.getElementById('val-incidentes').innerText = filteredIncidents.length.toLocaleString('pt-BR');
       document.getElementById('incidents-count').innerText = `${filteredIncidents.length} ativas`;
@@ -362,15 +410,18 @@
             opacity: 1,
             fillOpacity: 0.95
           }).bindPopup(`
-            <div style="color: #0e1117; font-family: sans-serif; min-width: 180px;">
+            <div style="color: #0e1117; font-family: sans-serif; min-width: 200px;">
               <span style="background: ${color}; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">
                 ${inc.impacto} IMPACTO
               </span>
               <h4 style="margin: 6px 0 2px 0; font-size: 0.95rem;">${inc.tipo}</h4>
               <p style="margin: 0; font-size: 0.8rem; color: #333;">📍 ${inc.local}</p>
-              <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #555;">
+              <p style="margin: 4px 0 8px 0; font-size: 0.75rem; color: #555;">
                 Zona: <strong>${inc.zona}</strong> | Atraso: <strong>${inc.tempoAtraso}</strong>
               </p>
+              <button onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')" style="background: #00b4d8; color: #0e1117; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.78rem; cursor: pointer; width: 100%;">
+                📷 Ver Câmera do Local
+              </button>
             </div>
           `);
 
@@ -406,14 +457,18 @@
       container.innerHTML = '';
 
       if (incidentes.length === 0) {
-        container.innerHTML = '<div style="color: #8b949e; text-align: center; padding: 30px;">Nenhuma ocorrência encontrada com os filtros selecionados.</div>';
+        container.innerHTML = '<div style="color: #8b949e; text-align: center; padding: 30px;">Nenhuma ocorrência encontrada.</div>';
         return;
       }
 
       incidentes.forEach(inc => {
         const item = document.createElement('div');
         item.className = `incident-item ${inc.impacto}`;
-        item.onclick = () => focusIncidentOnMap(inc.id);
+        item.onclick = (e) => {
+          if (!e.target.classList.contains('btn-cam')) {
+            focusIncidentOnMap(inc.id);
+          }
+        };
 
         item.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -427,7 +482,10 @@
             <span>Atraso: <strong>${inc.tempoAtraso || '--'}</strong></span>
             <span class="time-tag">🕒 ${inc.updatedAt ? inc.updatedAt.split(' ')[1] : ''}</span>
           </div>
-          <div class="click-hint">Clique para focar no mapa 🎯</div>
+          <div class="incident-actions">
+            <button class="btn-cam" onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')">📷 Ver Câmera</button>
+            <span class="click-hint">Clique para focar no mapa 🎯</span>
+          </div>
         `;
         container.appendChild(item);
       });
@@ -439,6 +497,19 @@
         map.flyTo([target.lat, target.lon], 16, { animate: true, duration: 1.2 });
         setTimeout(() => { target.marker.openPopup(); }, 1200);
       }
+    }
+
+    function openCamModal(tipo, local, id) {
+      document.getElementById('cam-modal-title').innerText = `📷 Câmera CET-SP: ${tipo}`;
+      document.getElementById('cam-modal-desc').innerText = `Monitoramento ao vivo do trecho: ${local}. Câmera ID: ${id}.`;
+      document.getElementById('cam-hud-id').innerText = `${id}`;
+      document.getElementById('cam-hud-time').innerText = new Date().toLocaleTimeString('pt-BR');
+      document.getElementById('cam-official-link').href = `http://www.cetsp.com.br/consultas/cameras.aspx`;
+      document.getElementById('cam-modal').classList.add('open');
+    }
+
+    function closeCamModal() {
+      document.getElementById('cam-modal').classList.remove('open');
     }
 
     function updateActiveChips() {
@@ -453,34 +524,19 @@
       let count = 0;
 
       if (searchVal) {
-        container.appendChild(createChip(`Busca: "${searchVal}"`, () => {
-          document.getElementById('filter-search').value = '';
-          applyAllFilters();
-        }));
+        container.appendChild(createChip(`Busca: "${searchVal}"`, () => { document.getElementById('filter-search').value = ''; applyAllFilters(); }));
         count++;
       }
-
       if (zonaVal) {
-        container.appendChild(createChip(`Zona: ${zonaVal}`, () => {
-          document.getElementById('filter-zona').value = '';
-          applyAllFilters();
-        }));
+        container.appendChild(createChip(`Zona: ${zonaVal}`, () => { document.getElementById('filter-zona').value = ''; applyAllFilters(); }));
         count++;
       }
-
       if (impactoVal) {
-        container.appendChild(createChip(`Impacto: ${impactoVal}`, () => {
-          document.getElementById('filter-impacto').value = '';
-          applyAllFilters();
-        }));
+        container.appendChild(createChip(`Impacto: ${impactoVal}`, () => { document.getElementById('filter-impacto').value = ''; applyAllFilters(); }));
         count++;
       }
-
       if (categoriaVal) {
-        container.appendChild(createChip(`Categoria: ${categoriaVal}`, () => {
-          document.getElementById('filter-categoria').value = '';
-          applyAllFilters();
-        }));
+        container.appendChild(createChip(`Categoria: ${categoriaVal}`, () => { document.getElementById('filter-categoria').value = ''; applyAllFilters(); }));
         count++;
       }
 
@@ -493,10 +549,7 @@
       const chip = document.createElement('span');
       chip.className = 'chip';
       chip.innerHTML = `${text} <span class="close-chip">✕</span>`;
-      chip.querySelector('.close-chip').onclick = (e) => {
-        e.stopPropagation();
-        onRemove();
-      };
+      chip.querySelector('.close-chip').onclick = (e) => { e.stopPropagation(); onRemove(); };
       return chip;
     }
 
