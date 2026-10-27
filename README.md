@@ -1,3 +1,3 @@
-# Monitor de Mobilidade Urbana em Tempo Real
+# Monitor de Mobilidade Urbana em Tempo Real - São Paulo
 
-Projeto sem o widget de IA local e com Bounding Box otimizada para exibição de dados em tempo real.
+Dashboard otimizado aplicando leis de usabilidade (Heurísticas de Nielsen & Lei de Fitts) com mapeamento completo de semáforos via Overpass API e agrupamento georreferenciado com MarkerCluster.

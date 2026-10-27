@@ -4,152 +4,285 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitor de Mobilidade Urbana em Tempo Real</title>
-  <!-- Leaflet CSS -->
+  
+  <!-- Leaflet CSS & MarkerCluster CSS (Heurística de Usabilidade: Prevenção de Poluição Visual e Agrupamento Claro) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0e1117; color: #f0f2f6; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #0e1117; color: #f0f2f6; line-height: 1.5; }
     
-    header { background-color: #16213e; padding: 20px; border-bottom: 1px solid #1e2130; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 1.5rem; color: #00b4d8; }
-    .status-badge { background: #0096FF22; color: #00b4d8; border: 1px solid #00b4d8; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; }
-
-    .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+    /* Lei de Usabilidade: Visibilidade do Status do Sistema (Heurística #1) */
+    header { background-color: #16213e; padding: 16px 24px; border-bottom: 1px solid #1e2130; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+    .header-title h1 { font-size: 1.4rem; color: #00b4d8; font-weight: 700; letter-spacing: -0.3px; }
+    .header-title p { font-size: 0.8rem; color: #8b949e; margin-top: 2px; }
     
-    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 10px; padding: 20px; }
-    .card h3 { font-size: 0.9rem; color: #8b949e; margin-bottom: 8px; }
-    .card .value { font-size: 2.2rem; font-weight: bold; color: #00b4d8; }
+    .status-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 180, 216, 0.1); color: #00b4d8; border: 1px solid #00b4d8; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+    .status-dot { width: 8px; height: 8px; background-color: #00b4d8; border-radius: 50%; box-shadow: 0 0 8px #00b4d8; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    .container { max-width: 1440px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+    
+    /* KPIs com Alto Contraste & Hierarquia Visual (Heurística #8 - Design Minimalista) */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 12px; padding: 20px; transition: transform 0.2s ease, border-color 0.2s ease; }
+    .card:hover { border-color: #00b4d8; transform: translateY(-2px); }
+    .card h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8b949e; margin-bottom: 8px; }
+    .card .value { font-size: 2.2rem; font-weight: 800; color: #00b4d8; font-feature-settings: "tnum"; }
+    .card .subtext { font-size: 0.8rem; color: #a0aec0; margin-top: 4px; }
 
-    #map { width: 100%; height: 500px; border-radius: 10px; border: 1px solid #1e2130; }
+    /* Barra de Ações & Filtros (Lei de Fitts: Botões Acessíveis e Controles Consistentes) */
+    .controls-bar { background-color: #16213e; border: 1px solid #1e2130; border-radius: 12px; padding: 14px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+    .search-box { display: flex; gap: 10px; flex: 1; min-width: 280px; }
+    .search-box input { flex: 1; background-color: #0e1117; border: 1px solid #383848; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+    .search-box input:focus { border-color: #00b4d8; box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.2); }
+    
+    .btn-action { background-color: #00b4d8; color: #0e1117; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
+    .btn-action:hover { background-color: #33c4e3; }
+    .btn-action:active { transform: scale(0.98); }
 
-    .incidents-card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-    .incidents-card h2 { font-size: 1.1rem; color: #00b4d8; border-bottom: 1px solid #1e2130; padding-bottom: 10px; }
-    .incident-item { background: #0e1117; padding: 12px; border-radius: 6px; border-left: 4px solid #00b4d8; font-size: 0.88rem; }
+    .content-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+
+    #map { width: 100%; height: 550px; border-radius: 12px; border: 1px solid #1e2130; z-index: 1; }
+
+    /* Estilização Customizada dos Clusters de Semáforos no Mapa */
+    .marker-cluster-small { background-color: rgba(0, 180, 216, 0.6); }
+    .marker-cluster-small div { background-color: rgba(0, 180, 216, 0.9); color: #0e1117; font-weight: bold; }
+    .marker-cluster-medium { background-color: rgba(255, 167, 38, 0.6); }
+    .marker-cluster-medium div { background-color: rgba(255, 167, 38, 0.9); color: #0e1117; font-weight: bold; }
+
+    /* Painel Lateral de Ocorrências (Heurística #2: Correspondência com o Mundo Real) */
+    .incidents-card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; height: 550px; }
+    .incidents-card h2 { font-size: 1.1rem; color: #00b4d8; border-bottom: 1px solid #1e2130; padding-bottom: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .incidents-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+    .incidents-list::-webkit-scrollbar { width: 6px; }
+    .incidents-list::-webkit-scrollbar-thumb { background: #383848; border-radius: 3px; }
+
+    .incident-item { background: #0e1117; padding: 14px; border-radius: 8px; border-left: 4px solid #00b4d8; font-size: 0.88rem; transition: background-color 0.2s; cursor: pointer; }
+    .incident-item:hover { background: #182232; }
     .incident-item.ALTO { border-left-color: #ff4b4b; }
     .incident-item.MÉDIO { border-left-color: #ffa726; }
     .incident-item.BAIXO { border-left-color: #26a69a; }
-    .incident-item .title { font-weight: bold; margin-bottom: 4px; color: #fff; }
-    .incident-item .meta { color: #8b949e; font-size: 0.8rem; }
+    
+    .incident-item .badge-impact { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
+    .incident-item.ALTO .badge-impact { background: rgba(255, 75, 75, 0.2); color: #ff4b4b; }
+    .incident-item.MÉDIO .badge-impact { background: rgba(255, 167, 38, 0.2); color: #ffa726; }
+    .incident-item.BAIXO .badge-impact { background: rgba(38, 166, 154, 0.2); color: #26a69a; }
 
-    @media (max-width: 900px) {
-      .metrics-grid { grid-template-columns: 1fr; }
+    .incident-item .title { font-weight: 700; margin-bottom: 4px; color: #ffffff; font-size: 0.95rem; }
+    .incident-item .location { color: #d0d7de; font-size: 0.85rem; margin-bottom: 8px; }
+    .incident-item .meta { color: #8b949e; font-size: 0.78rem; display: flex; justify-content: space-between; border-top: 1px solid #1e2130; padding-top: 6px; }
+
+    /* Skeleton Loading Feedback */
+    .skeleton { background: linear-gradient(90deg, #1e2130 25%, #2a2d3d 50%, #1e2130 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 4px; }
+    @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    @media (max-width: 1024px) {
       .content-grid { grid-template-columns: 1fr; }
+      #map { height: 420px; }
+      .incidents-card { height: auto; max-height: 450px; }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Monitor de Mobilidade & Trânsito Urbano</h1>
-    <div class="status-badge" id="live-status">Conectando...</div>
+    <div class="header-title">
+      <h1>Monitor de Mobilidade & Trânsito Urbano</h1>
+      <p>Mapeamento georreferenciado e métricas operacionais em tempo real</p>
+    </div>
+    <div class="status-badge" id="live-status">
+      <span class="status-dot"></span>
+      <span id="status-text">Conectando à API...</span>
+    </div>
   </header>
 
   <div class="container">
+    <!-- KPIs Principais -->
     <div class="metrics-grid">
       <div class="card">
-        <h3>Semáforos Mapeados</h3>
-        <div class="value" id="val-semaforos">--</div>
+        <h3>Semáforos Mapeados (SP)</h3>
+        <div class="value" id="val-semaforos">...</div>
+        <div class="subtext" id="sub-semaforos">Carregando dados geoespaciais...</div>
       </div>
       <div class="card">
         <h3>Vias Monitoradas</h3>
-        <div class="value" id="val-vias">--</div>
+        <div class="value" id="val-vias">...</div>
+        <div class="subtext">Corredores primários e secundários</div>
       </div>
       <div class="card">
-        <h3>Incidentes Ativos</h3>
-        <div class="value" id="val-incidentes">--</div>
+        <h3>Ocorrências Ativas</h3>
+        <div class="value" id="val-incidentes">...</div>
+        <div class="subtext">Incidentes em atendimento/monitoramento</div>
       </div>
     </div>
 
+    <!-- Barra de Filtros e Busca (Lei de Usabilidade: Flexibilidade e Eficiência de Uso) -->
+    <div class="controls-bar">
+      <div class="search-box">
+        <input type="text" id="filter-input" placeholder="Buscar por via, cruzamento ou ID do semáforo..." oninput="filterData()" />
+      </div>
+      <button class="btn-action" onclick="loadLiveData()">↻ Atualizar Dados</button>
+    </div>
+
+    <!-- Conteúdo Principal: Mapa + Painel de Ocorrências -->
     <div class="content-grid">
       <div class="card" style="padding: 0; overflow: hidden;">
         <div id="map"></div>
       </div>
 
       <div class="incidents-card">
-        <h2>Ocorrências em Tempo Real</h2>
-        <div id="incidents-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 430px;">
-          <div style="color: #8b949e;">Carregando incidentes...</div>
+        <h2>
+          <span>Ocorrências Recentes</span>
+          <span style="font-size: 0.8rem; color: #8b949e;" id="incidents-count">0 ativas</span>
+        </h2>
+        <div class="incidents-list" id="incidents-list">
+          <div class="incident-item skeleton" style="height: 80px;"></div>
+          <div class="incident-item skeleton" style="height: 80px;"></div>
+          <div class="incident-item skeleton" style="height: 80px;"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Leaflet JS -->
+  <!-- Leaflet JS & MarkerCluster JS (Agrupamento Eficiente de Alto Volume) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
   <script>
     let map;
-    let markersGroup;
+    let markersCluster;
+    let rawPayload = null;
 
     function initMap() {
-      map = L.map('map').setView([-23.5505, -46.6333], 13);
+      // Centro em São Paulo
+      map = L.map('map', { zoomControl: true }).setView([-23.5505, -46.6333], 12);
       
-      // Esri World Dark Gray (Sem API Key)
+      // Esri Dark Gray (Nativamente escuro, sem restrição de API Key)
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
         maxZoom: 16
       }).addTo(map);
 
-      markersGroup = L.layerGroup().addTo(map);
+      // Agrupamento de marcadores (MarkerCluster) para suportar milhares de semáforos sem travar
+      markersCluster = L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false
+      });
+      map.addLayer(markersCluster);
     }
 
     async function loadLiveData() {
+      const statusText = document.getElementById('status-text');
+      statusText.innerText = 'Atualizando...';
+
       try {
         const res = await fetch('/api/index');
-        const PAYLOAD = await res.json();
+        rawPayload = await res.json();
+
+        // Heurística #1: Feedback Claro de Status
+        statusText.innerText = '● Ao Vivo (Overpass API - SP)';
 
         // Atualiza KPIs
-        document.getElementById('val-semaforos').innerText = PAYLOAD.summary?.totalSemaforosMapeados || 0;
-        document.getElementById('val-vias').innerText = PAYLOAD.summary?.totalViasPrincipais || 0;
-        document.getElementById('val-incidentes').innerText = PAYLOAD.summary?.totalIncidentesAtivos || 0;
-        document.getElementById('live-status').innerText = '● Ao Vivo (Overpass API)';
+        document.getElementById('val-semaforos').innerText = (rawPayload.summary?.totalSemaforosMapeados || 0).toLocaleString('pt-BR');
+        document.getElementById('sub-semaforos').innerText = `Mapeados em toda a malha urbana de SP`;
+        document.getElementById('val-vias').innerText = (rawPayload.summary?.totalViasPrincipais || 0).toLocaleString('pt-BR');
+        document.getElementById('val-incidentes').innerText = rawPayload.summary?.totalIncidentesAtivos || 0;
+        document.getElementById('incidents-count').innerText = `${rawPayload.summary?.totalIncidentesAtivos || 0} ativas`;
 
-        // Renderiza Lista de Incidentes
-        const incidentsContainer = document.getElementById('incidents-list');
-        incidentsContainer.innerHTML = '';
-        if (PAYLOAD.incidentes && PAYLOAD.incidentes.length > 0) {
-          PAYLOAD.incidentes.forEach(inc => {
-            const item = document.createElement('div');
-            item.className = `incident-item ${inc.impacto}`;
-            item.innerHTML = `
-              <div class="title">${inc.tipo}</div>
-              <div>${inc.local}</div>
-              <div class="meta">Impacto: ${inc.impacto} | Status: ${inc.status}</div>
-            `;
-            incidentsContainer.appendChild(item);
-          });
-        } else {
-          incidentsContainer.innerHTML = '<div style="color: #8b949e;">Nenhum incidente ativo.</div>';
-        }
+        renderIncidents(rawPayload.incidentes || []);
+        renderMarkers(rawPayload.nodes || []);
 
-        // Plotar Pontos dos Semáforos no Mapa
-        markersGroup.clearLayers();
-        if (PAYLOAD.nodes && PAYLOAD.nodes.length > 0) {
-          PAYLOAD.nodes.forEach(node => {
-            if (node.lat && node.lon) {
-              L.circleMarker([node.lat, node.lon], {
-                radius: 5,
-                fillColor: "#00b4d8",
-                color: "#ffffff",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.85
-              }).bindPopup(`<b>Semáforo ID:</b> ${node.id}`).addTo(markersGroup);
-            }
-          });
-        }
       } catch (err) {
-        document.getElementById('live-status').innerText = '❌ Erro de Conexão';
-        console.error("Erro ao carregar dados:", err);
+        statusText.innerText = '❌ Erro de Conexão com API';
+        console.error("Erro na busca de dados:", err);
       }
+    }
+
+    function renderMarkers(nodes) {
+      markersCluster.clearLayers();
+      const markers = [];
+
+      nodes.forEach(node => {
+        if (node.lat && node.lon) {
+          const marker = L.circleMarker([node.lat, node.lon], {
+            radius: 5,
+            fillColor: "#00b4d8",
+            color: "#ffffff",
+            weight: 1,
+            opacity: 0.9,
+            fillOpacity: 0.85
+          }).bindPopup(`
+            <div style="color: #0e1117; font-family: sans-serif;">
+              <strong>Semáforo ID:</strong> ${node.id}<br/>
+              <strong>Status:</strong> Operacional<br/>
+              <small>Lat: ${node.lat.toFixed(4)}, Lon: ${node.lon.toFixed(4)}</small>
+            </div>
+          `);
+          markers.push(marker);
+        }
+      });
+
+      markersCluster.addLayers(markers);
+    }
+
+    function renderIncidents(incidentes) {
+      const container = document.getElementById('incidents-list');
+      container.innerHTML = '';
+
+      if (incidentes.length === 0) {
+        container.innerHTML = '<div style="color: #8b949e; text-align: center; padding: 20px;">Nenhuma ocorrência registrada no momento.</div>';
+        return;
+      }
+
+      incidentes.forEach(inc => {
+        const item = document.createElement('div');
+        item.className = `incident-item ${inc.impacto}`;
+        item.innerHTML = `
+          <span class="badge-impact">${inc.impacto} Impacto</span>
+          <div class="title">${inc.tipo}</div>
+          <div class="location">📍 ${inc.local}</div>
+          <div class="meta">
+            <span>Atraso: <strong>${inc.tempoAtraso || '--'}</strong></span>
+            <span>Status: <strong>${inc.status}</strong></span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function filterData() {
+      if (!rawPayload) return;
+      const term = document.getElementById('filter-input').value.toLowerCase().trim();
+
+      if (!term) {
+        renderMarkers(rawPayload.nodes || []);
+        renderIncidents(rawPayload.incidentes || []);
+        return;
+      }
+
+      // Filtra incidentes e semáforos por termo de busca
+      const filteredNodes = (rawPayload.nodes || []).filter(n => 
+        String(n.id).includes(term) || (n.tags && JSON.stringify(n.tags).toLowerCase().includes(term))
+      );
+
+      const filteredIncidents = (rawPayload.incidentes || []).filter(i =>
+        i.local.toLowerCase().includes(term) || i.tipo.toLowerCase().includes(term)
+      );
+
+      renderMarkers(filteredNodes);
+      renderIncidents(filteredIncidents);
     }
 
     window.onload = () => {
       initMap();
       loadLiveData();
-      setInterval(loadLiveData, 60000);
+      setInterval(loadLiveData, 60000); // Atualiza automaticamente a cada 60s
     };
   </script>
 </body>
