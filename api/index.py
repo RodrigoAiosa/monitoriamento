@@ -4,12 +4,11 @@ import requests
 from datetime import datetime, timezone, timedelta
 import time
 
-# Cache em memória global na instância Serverless
 GLOBAL_CACHE = {
     "data": None,
     "timestamp": 0
 }
-CACHE_TTL_SECONDS = 1800  # 30 minutos de validade do cache
+CACHE_TTL_SECONDS = 1800  # 30 minutos
 
 OVERPASS_URLS = [
     "https://overpass-api.de/api/interpreter",
@@ -22,12 +21,10 @@ class handler(BaseHTTPRequestHandler):
         global GLOBAL_CACHE
         now = time.time()
 
-        # 1. VERIFICA SE O CACHE É VÁLIDO (Resposta instantânea em < 200ms)
         if GLOBAL_CACHE["data"] is not None and (now - GLOBAL_CACHE["timestamp"]) < CACHE_TTL_SECONDS:
             self.send_json_response(GLOBAL_CACHE["data"])
             return
 
-        # 2. CONSULTA OTIMIZADA COM BOUNDING BOX REDUZIDA E TIMEOUT CURTO
         overpass_query = """
         [out:json][timeout:10];
         (
@@ -46,7 +43,6 @@ class handler(BaseHTTPRequestHandler):
         osm_data = None
         for url in OVERPASS_URLS:
             try:
-                # Timeout reduzido de 22s para 4s para evitar espera prolongada
                 response = requests.post(
                     url, 
                     data={'data': overpass_query}, 
@@ -72,7 +68,6 @@ class handler(BaseHTTPRequestHandler):
             ]
             vias = [e for e in elements if e.get("type") == "way"]
         else:
-            # Fallback rápido caso a Overpass esteja inacessível/lenta
             semaforos = []
             import random
             random.seed(42)
@@ -203,7 +198,6 @@ class handler(BaseHTTPRequestHandler):
             "nodes": semaforos
         }
 
-        # Salva o resultado no cache global
         GLOBAL_CACHE["data"] = payload
         GLOBAL_CACHE["timestamp"] = now
 
@@ -213,7 +207,6 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
-        # Cache no navegador do usuário por 120 segundos
         self.send_header('Cache-Control', 's-maxage=120, stale-while-revalidate=300')
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode('utf-8'))

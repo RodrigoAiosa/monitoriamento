@@ -93,7 +93,7 @@
     .btn-cam { background: rgba(0, 180, 216, 0.15); border: 1px solid #00b4d8; color: #00b4d8; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .btn-cam:hover { background: #00b4d8; color: #0e1117; }
 
-    /* Modal de Câmera de Monitoramento CET-SP */
+    /* Modal de Câmera CET-SP */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.open { display: flex; }
     .modal-cam-box { background: #16213e; border: 1px solid #00b4d8; border-radius: 12px; width: min(700px, 100%); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -247,39 +247,33 @@
   <div class="modal-overlay" id="cam-modal">
     <div class="modal-cam-box">
       <div class="modal-cam-header">
-        <h3 id="cam-modal-title">📷 Câmera de Monitoramento ao Vivo</h3>
+        <h3 id="cam-modal-title">📷 Câmera CET-SP / Monitoramento ao Vivo</h3>
         <button class="modal-cam-close" onclick="closeCamModal()">✕</button>
       </div>
       <div class="modal-cam-body">
         <div class="cam-feed-container">
           <div class="cam-hud-overlay">
-            <div class="cam-hud-rec"><span class="cam-hud-rec-dot"></span> LIVE CET-SP</div>
+            <div class="cam-hud-rec"><span class="cam-hud-rec-dot"></span> LIVE CET-SP / CFTV</div>
             <div id="cam-hud-time">--:--:--</div>
             <div id="cam-hud-id">CAM-SP-042</div>
           </div>
-          <svg width="100%" height="100%" viewBox="0 0 600 340" style="background: #0d131d;">
-            <defs>
-              <linearGradient id="road" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#1e2638"/>
-                <stop offset="100%" stop-color="#0a0f18"/>
-              </linearGradient>
-            </defs>
-            <polygon points="100,340 250,120 350,120 500,340" fill="url(#road)"/>
-            <line x1="300" y1="120" x2="300" y2="340" stroke="#00b4d8" stroke-width="3" stroke-dasharray="12,12"/>
-            <circle cx="280" cy="220" r="8" fill="#ff4b4b"/>
-            <circle cx="320" cy="260" r="10" fill="#ffa726"/>
-            <circle cx="290" cy="160" r="5" fill="#00b4d8"/>
-            <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#00b4d8" font-family="monospace" font-size="14" opacity="0.8">
-              [TRANSMISSÃO AO VIVO DO LOCAL]
-            </text>
-          </svg>
+          
+          <iframe 
+            id="cam-video-frame"
+            src="about:blank"
+            width="100%" 
+            height="100%" 
+            style="border:0;" 
+            allow="autoplay; encrypted-media" 
+            allowfullscreen>
+          </iframe>
         </div>
         <p style="font-size: 0.85rem; color: #8b949e;" id="cam-modal-desc">
-          Monitoramento do trecho via central de tráfego. Os dados de fluxo são atualizados continuamente.
+          Monitoramento em tempo real do trecho urbano.
         </p>
         <div>
-          <a class="btn-cet-official" id="cam-official-link" href="http://www.cetsp.com.br/" target="_blank" rel="noopener">
-            🌐 Abrir Câmera Oficial no Portal da CET-SP ↗
+          <a class="btn-cet-official" id="cam-official-link" href="https://www.cetsp.com.br/" target="_blank" rel="noopener">
+            🌐 Abrir Portal Oficial da CET-SP ↗
           </a>
         </div>
       </div>
@@ -288,7 +282,7 @@
 
   <!-- Leaflet JS & MarkerCluster JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/Leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
   <script>
     let map;
@@ -500,15 +494,22 @@
     }
 
     function openCamModal(tipo, local, id) {
-      document.getElementById('cam-modal-title').innerText = `📷 Câmera CET-SP: ${tipo}`;
+      document.getElementById('cam-modal-title').innerText = `📷 Câmera de Trânsito: ${tipo}`;
       document.getElementById('cam-modal-desc').innerText = `Monitoramento ao vivo do trecho: ${local}. Câmera ID: ${id}.`;
       document.getElementById('cam-hud-id').innerText = `${id}`;
       document.getElementById('cam-hud-time').innerText = new Date().toLocaleTimeString('pt-BR');
-      document.getElementById('cam-official-link').href = `http://www.cetsp.com.br/consultas/cameras.aspx`;
+      
+      document.getElementById('cam-official-link').href = `https://www.cetsp.com.br/`;
+
+      const videoFrame = document.getElementById('cam-video-frame');
+      videoFrame.src = "https://www.youtube-nocookie.com/embed/1EiC9bvVGnk?autoplay=1&mute=1&controls=0&loop=1&playlist=1EiC9bvVGnk";
+
       document.getElementById('cam-modal').classList.add('open');
     }
 
     function closeCamModal() {
+      const videoFrame = document.getElementById('cam-video-frame');
+      videoFrame.src = "about:blank";
       document.getElementById('cam-modal').classList.remove('open');
     }
 

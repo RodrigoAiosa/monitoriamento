@@ -1,3 +1,3 @@
-# Monitor de Mobilidade Urbana em Tempo Real - São Paulo
+# Monitor de Mobilidade Urbana em Tempo Real - SP
 
-Data e hora formatadas estritamente no padrão pt-BR (Fuso Horário de Brasília UTC-3).
+Projeto atualizado com Cache de API, Cron Job Vercel e Player de Câmeras em Tempo Real.
