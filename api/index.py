@@ -1,7 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 OVERPASS_URLS = [
     "https://overpass.kumi.systems/api/interpreter",
@@ -73,7 +73,11 @@ class handler(BaseHTTPRequestHandler):
                 })
             vias = [{"id": 5000 + i} for i in range(60)]
 
-        # Base de incidentes rica em atributos para filtragem avançada
+        # Horário Oficial de Brasília (UTC-3)
+        fuso_sp = timezone(timedelta(hours=-3))
+        agora_sp = datetime.now(fuso_sp)
+        data_hora_ptbr = agora_sp.strftime("%d/%m/%Y %H:%M:%S")
+
         incidentes = [
             {
                 "id": "INC-8812",
@@ -86,7 +90,7 @@ class handler(BaseHTTPRequestHandler):
                 "tempoAtraso": "35 min",
                 "lat": -23.5615,
                 "lon": -46.6710,
-                "updatedAt": "27/10/2026 11:10"
+                "updatedAt": f"{agora_sp.strftime('%d/%m/%Y')} 11:10"
             },
             {
                 "id": "INC-8815",
@@ -99,7 +103,7 @@ class handler(BaseHTTPRequestHandler):
                 "tempoAtraso": "48 min",
                 "lat": -23.5862,
                 "lon": -46.6912,
-                "updatedAt": "27/10/2026 11:12"
+                "updatedAt": f"{agora_sp.strftime('%d/%m/%Y')} 11:12"
             },
             {
                 "id": "INC-8816",
@@ -112,7 +116,7 @@ class handler(BaseHTTPRequestHandler):
                 "tempoAtraso": "55 min",
                 "lat": -23.5820,
                 "lon": -46.5680,
-                "updatedAt": "27/10/2026 11:05"
+                "updatedAt": f"{agora_sp.strftime('%d/%m/%Y')} 11:05"
             },
             {
                 "id": "INC-8813",
@@ -125,7 +129,7 @@ class handler(BaseHTTPRequestHandler):
                 "tempoAtraso": "18 min",
                 "lat": -23.5610,
                 "lon": -46.6558,
-                "updatedAt": "27/10/2026 11:08"
+                "updatedAt": f"{agora_sp.strftime('%d/%m/%Y')} 11:08"
             },
             {
                 "id": "INC-8817",
@@ -138,7 +142,7 @@ class handler(BaseHTTPRequestHandler):
                 "tempoAtraso": "22 min",
                 "lat": -23.5280,
                 "lon": -46.6260,
-                "updatedAt": "27/10/2026 10:58"
+                "updatedAt": f"{agora_sp.strftime('%d/%m/%Y')} 10:58"
             },
             {
                 "id": "INC-8814",
@@ -151,7 +155,7 @@ class handler(BaseHTTPRequestHandler):
                 "tempoAtraso": "10 min",
                 "lat": -23.5480,
                 "lon": -46.6280,
-                "updatedAt": "27/10/2026 09:30"
+                "updatedAt": f"{agora_sp.strftime('%d/%m/%Y')} 09:30"
             },
             {
                 "id": "INC-8818",
@@ -164,13 +168,13 @@ class handler(BaseHTTPRequestHandler):
                 "tempoAtraso": "8 min",
                 "lat": -23.6700,
                 "lon": -46.6850,
-                "updatedAt": "27/10/2026 10:45"
+                "updatedAt": f"{agora_sp.strftime('%d/%m/%Y')} 10:45"
             }
         ]
 
         payload = {
             "status": "online",
-            "lastGlobalUpdate": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            "lastGlobalUpdate": data_hora_ptbr,
             "summary": {
                 "totalSemaforosMapeados": len(semaforos),
                 "totalViasPrincipais": len(vias),

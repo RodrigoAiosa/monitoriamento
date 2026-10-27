@@ -32,7 +32,7 @@
     .card .value { font-size: 2.2rem; font-weight: 800; color: #00b4d8; font-feature-settings: "tnum"; }
     .card .subtext { font-size: 0.8rem; color: #a0aec0; margin-top: 4px; }
 
-    /* Barra Superior de Filtros Multi-critério (Heurística de Nielsen #7 - Flexibilidade & Eficiência de Uso) */
+    /* Painel de Filtros */
     .filters-panel { background-color: #16213e; border: 1px solid #1e2130; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
     .filters-row { display: grid; grid-template-columns: 2fr repeat(4, 1fr) auto; gap: 12px; align-items: center; }
     
@@ -50,7 +50,7 @@
     .btn-clear { background-color: #1e2130; color: #8b949e; border: 1px solid #383848; padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; }
     .btn-clear:hover { background-color: #ff4b4b22; color: #ff4b4b; border-color: #ff4b4b; }
 
-    /* Barra de Feedback de Filtros Ativos (Heurística #1 - Visibilidade do Estado do Sistema & #3 - Controle do Utilizador) */
+    /* Barra de Chips */
     .active-chips-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8rem; color: #8b949e; padding-top: 4px; border-top: 1px solid #1e2130; }
     .chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(0, 180, 216, 0.15); color: #00b4d8; border: 1px solid rgba(0, 180, 216, 0.3); padding: 4px 10px; border-radius: 16px; font-size: 0.78rem; font-weight: 600; }
     .chip .close-chip { cursor: pointer; font-weight: bold; margin-left: 2px; }
@@ -60,11 +60,11 @@
 
     #map { width: 100%; height: 620px; border-radius: 12px; border: 1px solid #1e2130; z-index: 1; }
 
-    /* Painel de Ocorrências com Leis de Usabilidade */
+    /* Painel de Ocorrências */
     .incidents-card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; height: 620px; }
     .incidents-card-header { border-bottom: 1px solid #1e2130; padding-bottom: 12px; margin-bottom: 15px; }
     .incidents-card-header h2 { font-size: 1.1rem; color: #00b4d8; display: flex; justify-content: space-between; align-items: center; }
-    .incidents-card-header .last-updated-time { font-size: 0.78rem; color: #8b949e; margin-top: 4px; }
+    .incidents-card-header .last-updated-time { font-size: 0.82rem; color: #00b4d8; margin-top: 4px; font-weight: 600; }
     
     .incidents-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
     .incidents-list::-webkit-scrollbar { width: 6px; }
@@ -136,16 +136,14 @@
       </div>
     </div>
 
-    <!-- Painel Completo de Filtros Multi-critério (Leis de Usabilidade) -->
+    <!-- Painel de Filtros -->
     <div class="filters-panel">
       <div class="filters-row">
-        <!-- 1. Busca Global -->
         <div class="filter-group">
           <label>🔍 Busca Textual</label>
           <input type="text" id="filter-search" placeholder="Via, bairro ou ID..." oninput="applyAllFilters()" />
         </div>
 
-        <!-- 2. Filtro por Zona -->
         <div class="filter-group">
           <label>📍 Zona de SP</label>
           <select id="filter-zona" onchange="applyAllFilters()">
@@ -158,7 +156,6 @@
           </select>
         </div>
 
-        <!-- 3. Filtro por Nível de Impacto -->
         <div class="filter-group">
           <label>⚠️ Nível de Impacto</label>
           <select id="filter-impacto" onchange="applyAllFilters()">
@@ -169,7 +166,6 @@
           </select>
         </div>
 
-        <!-- 4. Filtro por Categoria de Incidente -->
         <div class="filter-group">
           <label>🏷️ Categoria</label>
           <select id="filter-categoria" onchange="applyAllFilters()">
@@ -182,9 +178,8 @@
           </select>
         </div>
 
-        <!-- 5. Ordenação dos Resultados -->
         <div class="filter-group">
-          <label>🔃 Ordenar Por</label>
+          <label>IA Ordenação</label>
           <select id="filter-ordem" onchange="applyAllFilters()">
             <option value="IMPACTO_DESC">Impacto (Maior → Menor)</option>
             <option value="IMPACTO_ASC">Impacto (Menor → Maior)</option>
@@ -192,14 +187,12 @@
           </select>
         </div>
 
-        <!-- Botões de Ação -->
         <div class="filter-actions">
           <button class="btn-clear" onclick="clearAllFilters()" title="Limpar todos os filtros">✕ Limpar</button>
           <button class="btn-action" onclick="loadLiveData()">↻ Atualizar</button>
         </div>
       </div>
 
-      <!-- Barra de Chips de Filtros Ativos -->
       <div class="active-chips-bar" id="active-chips-container">
         <span>Filtros Ativos:</span>
         <span id="chips-list" style="display: flex; gap: 6px; flex-wrap: wrap;">
@@ -208,7 +201,7 @@
       </div>
     </div>
 
-    <!-- Conteúdo Principal: Mapa + Painel de Ocorrências -->
+    <!-- Conteúdo Principal -->
     <div class="content-grid">
       <div class="card" style="padding: 0; overflow: hidden;">
         <div id="map"></div>
@@ -220,7 +213,8 @@
             <span>Ocorrências Recentes</span>
             <span style="font-size: 0.82rem; color: #00b4d8; font-weight: bold;" id="incidents-count">0 ativas</span>
           </h2>
-          <div class="last-updated-time" id="last-updated-label">Última atualização: --:--:--</div>
+          <!-- Formatação estrita em pt-BR (DD/MM/AAAA às HH:mm:ss) -->
+          <div class="last-updated-time" id="last-updated-label">Última atualização: --/--/---- às --:--:--</div>
         </div>
 
         <div class="incidents-list" id="incidents-list">
@@ -268,6 +262,20 @@
       'BAIXO': 1
     };
 
+    // Função para formatar data/hora estritamente no padrão pt-BR
+    function formatDateTimePtBr(dateObj) {
+      const d = dateObj || new Date();
+      return d.toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
     async function loadLiveData() {
       const statusText = document.getElementById('status-text');
       statusText.innerText = 'Atualizando...';
@@ -276,9 +284,9 @@
         const res = await fetch('/api/index');
         rawPayload = await res.json();
 
-        const now = new Date();
-        const timeStr = rawPayload.lastGlobalUpdate || now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-        document.getElementById('last-updated-label').innerText = `Última atualização: ${timeStr}`;
+        // Formatação explícita em Português do Brasil (pt-BR)
+        const formattedPtBr = formatDateTimePtBr(new Date());
+        document.getElementById('last-updated-label').innerText = `Última atualização: ${formattedPtBr}`;
 
         statusText.innerText = '● Ao Vivo (Toda SP)';
 
@@ -293,7 +301,6 @@
       }
     }
 
-    // Função Principal do Sistema de Filtros (Aplicando Leis de Usabilidade)
     function applyAllFilters() {
       if (!rawPayload) return;
 
@@ -303,7 +310,6 @@
       const categoriaTerm = document.getElementById('filter-categoria').value;
       const ordemTerm = document.getElementById('filter-ordem').value;
 
-      // 1. Filtragem Multi-critério dos Incidentes
       let filteredIncidents = (rawPayload.incidentes || []).filter(inc => {
         const matchesSearch = !searchTerm || 
           inc.local.toLowerCase().includes(searchTerm) || 
@@ -317,7 +323,6 @@
         return matchesSearch && matchesZona && matchesImpacto && matchesCategoria;
       });
 
-      // 2. Ordenação das Ocorrências
       if (ordemTerm === 'IMPACTO_DESC') {
         filteredIncidents.sort((a, b) => (IMPACT_WEIGHT[b.impacto] || 0) - (IMPACT_WEIGHT[a.impacto] || 0));
       } else if (ordemTerm === 'IMPACTO_ASC') {
@@ -326,13 +331,11 @@
         filteredIncidents.sort((a, b) => b.id.localeCompare(a.id));
       }
 
-      // 3. Filtragem de Semáforos no Mapa pelo termo de busca
       const filteredNodes = (rawPayload.nodes || []).filter(node => {
         return !searchTerm || String(node.id).includes(searchTerm);
       });
 
-      // Atualiza Contadores
-      document.getElementById('val-incidentes').innerText = filteredIncidents.length;
+      document.getElementById('val-incidentes').innerText = filteredIncidents.length.toLocaleString('pt-BR');
       document.getElementById('incidents-count').innerText = `${filteredIncidents.length} ativas`;
 
       renderIncidents(filteredIncidents);
@@ -438,7 +441,6 @@
       }
     }
 
-    // Atualização da Barra de Chips de Filtros Ativos (Heurística #1 & #3)
     function updateActiveChips() {
       const container = document.getElementById('chips-list');
       container.innerHTML = '';
