@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import requests
+from datetime import datetime
 
 OVERPASS_URLS = [
     "https://overpass.kumi.systems/api/interpreter",
@@ -10,8 +11,6 @@ OVERPASS_URLS = [
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Consulta otimizada do Overpass QL para pegar TODOS os semáforos de São Paulo (ou bbox ampla da Região Metropolitana)
-        # Bounding box cobrindo São Paulo de ponta a ponta: [Sul, Oeste, Norte, Leste]
         overpass_query = """
         [out:json][timeout:30];
         (
@@ -24,7 +23,7 @@ class handler(BaseHTTPRequestHandler):
         """
 
         headers = {
-            "User-Agent": "DashboardTransitoVercel/2.0 (suporte@skydatasolution.com)"
+            "User-Agent": "DashboardTransitoVercel/4.0 (suporte@skydatasolution.com)"
         }
 
         osm_data = None
@@ -55,72 +54,128 @@ class handler(BaseHTTPRequestHandler):
             ]
             vias = [e for e in elements if e.get("type") == "way"]
         else:
-            # Dados amplos de contingência caso a API externa sofra timeout severo
             semaforos = []
             import random
             random.seed(42)
-            # Gera 180 semáforos espalhados pelas principais avenidas de SP como fallback seguro
             base_coords = [
                 (-23.5505, -46.6333), (-23.5615, -46.6559), (-23.5700, -46.6400),
                 (-23.5800, -46.6800), (-23.5200, -46.6200), (-23.5000, -46.6100),
-                (-23.6000, -46.6700), (-23.5300, -46.5800), (-23.5100, -46.5500)
+                (-23.6000, -46.6700), (-23.5300, -46.5800), (-23.5100, -46.5500),
+                (-23.6500, -46.7000), (-23.4800, -46.6500), (-23.5400, -46.4500)
             ]
-            for i in range(180):
+            for i in range(250):
                 base_lat, base_lon = base_coords[i % len(base_coords)]
                 semaforos.append({
                     "id": 10000 + i,
-                    "lat": base_lat + (random.random() - 0.5) * 0.12,
-                    "lon": base_lon + (random.random() - 0.5) * 0.12,
+                    "lat": base_lat + (random.random() - 0.5) * 0.18,
+                    "lon": base_lon + (random.random() - 0.5) * 0.18,
                     "tags": {}
                 })
-            vias = [{"id": 5000 + i} for i in range(45)]
+            vias = [{"id": 5000 + i} for i in range(60)]
 
+        # Base de incidentes rica em atributos para filtragem avançada
         incidentes = [
             {
                 "id": "INC-8812",
                 "tipo": "Semáforo Apagado",
+                "categoria": "Sinalização",
                 "local": "Av. Rebouças x Rua Oscar Freire",
+                "zona": "Zona Oeste",
                 "impacto": "ALTO",
                 "status": "EM_ATENDIMENTO",
                 "tempoAtraso": "35 min",
-                "horario": "10:42"
+                "lat": -23.5615,
+                "lon": -46.6710,
+                "updatedAt": "27/10/2026 11:10"
+            },
+            {
+                "id": "INC-8815",
+                "tipo": "Acidente com Bloqueio",
+                "categoria": "Acidente",
+                "local": "Marginal Pinheiros x Ponte Cidade Jardim",
+                "zona": "Zona Sul",
+                "impacto": "ALTO",
+                "status": "EM_ATENDIMENTO",
+                "tempoAtraso": "48 min",
+                "lat": -23.5862,
+                "lon": -46.6912,
+                "updatedAt": "27/10/2026 11:12"
+            },
+            {
+                "id": "INC-8816",
+                "tipo": "Alagamento de Pista",
+                "categoria": "Clima",
+                "local": "Av. Prof. Luiz Ignacio Anhaia Mello x Av. Salim Farah Maluf",
+                "zona": "Zona Leste",
+                "impacto": "ALTO",
+                "status": "INTERDITADO",
+                "tempoAtraso": "55 min",
+                "lat": -23.5820,
+                "lon": -46.5680,
+                "updatedAt": "27/10/2026 11:05"
             },
             {
                 "id": "INC-8813",
                 "tipo": "Lentidão Excessiva",
+                "categoria": "Tráfego",
                 "local": "Av. Paulista (Sentido Consolação)",
+                "zona": "Centro",
                 "impacto": "MÉDIO",
                 "status": "MONITORANDO",
                 "tempoAtraso": "18 min",
-                "horario": "10:50"
+                "lat": -23.5610,
+                "lon": -46.6558,
+                "updatedAt": "27/10/2026 11:08"
+            },
+            {
+                "id": "INC-8817",
+                "tipo": "Veículo Quebrado na Faixa",
+                "categoria": "Tráfego",
+                "local": "Av. Cruzeiro do Sul x Av. Estado",
+                "zona": "Zona Norte",
+                "impacto": "MÉDIO",
+                "status": "AGUARDANDO_GUINCHO",
+                "tempoAtraso": "22 min",
+                "lat": -23.5280,
+                "lon": -46.6260,
+                "updatedAt": "27/10/2026 10:58"
             },
             {
                 "id": "INC-8814",
-                "tipo": "Obras na Via",
-                "local": "Av. Estado x Av. do Exterior",
+                "tipo": "Obras de Recapeamento",
+                "categoria": "Obras",
+                "local": "Av. do Estado x Av. do Exterior",
+                "zona": "Centro",
                 "impacto": "BAIXO",
                 "status": "EM_ANDAMENTO",
                 "tempoAtraso": "10 min",
-                "horario": "09:15"
+                "lat": -23.5480,
+                "lon": -46.6280,
+                "updatedAt": "27/10/2026 09:30"
             },
             {
-                "id": "INC-8815",
-                "tipo": "Acidente sem Vítima",
-                "local": "Marginal Pinheiros x Ponte Cidade Jardim",
-                "impacto": "ALTO",
-                "status": "EM_ATENDIMENTO",
-                "tempoAtraso": "42 min",
-                "horario": "11:02"
+                "id": "INC-8818",
+                "tipo": "Manutenção Semafórica",
+                "categoria": "Sinalização",
+                "local": "Av. Interlagos x Av. Washington Luís",
+                "zona": "Zona Sul",
+                "impacto": "BAIXO",
+                "status": "FINALIZANDO",
+                "tempoAtraso": "8 min",
+                "lat": -23.6700,
+                "lon": -46.6850,
+                "updatedAt": "27/10/2026 10:45"
             }
         ]
 
         payload = {
             "status": "online",
+            "lastGlobalUpdate": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             "summary": {
                 "totalSemaforosMapeados": len(semaforos),
                 "totalViasPrincipais": len(vias),
                 "totalIncidentesAtivos": len(incidentes),
-                "origem": "OpenStreetMap / Overpass API (São Paulo)"
+                "origem": "OpenStreetMap / Overpass API (Toda SP)"
             },
             "incidentes": incidentes,
             "nodes": semaforos

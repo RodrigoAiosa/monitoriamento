@@ -1,3 +1,10 @@
-# Monitor de Mobilidade Urbana em Tempo Real - São Paulo
+# Monitor de Mobilidade Urbana - Sistema Avançado de Filtros e Usabilidade
 
-Dashboard otimizado aplicando leis de usabilidade (Heurísticas de Nielsen & Lei de Fitts) com mapeamento completo de semáforos via Overpass API e agrupamento georreferenciado com MarkerCluster.
+Aplicação das Leis de Usabilidade (Heurísticas de Nielsen) com filtros multi-critério:
+- Busca Textual
+- Filtro por Zona (Norte, Sul, Leste, Oeste, Centro)
+- Filtro por Impacto (Alto, Médio, Baixo)
+- Filtro por Categoria (Sinalização, Acidentes, Tráfego, Clima, Obras)
+- Ordenação Flexível
+- Barra Dinâmica de Chips com Remoção Rápida
+- Botão Limpar Filtros Globais
