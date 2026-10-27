@@ -14,35 +14,29 @@
     header h1 { font-size: 1.5rem; color: #00b4d8; }
     .status-badge { background: #0096FF22; color: #00b4d8; border: 1px solid #00b4d8; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; }
 
-    .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+    .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
     
-    .main-panel { display: flex; flex-direction: column; gap: 20px; }
     .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
     .card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 10px; padding: 20px; }
     .card h3 { font-size: 0.9rem; color: #8b949e; margin-bottom: 8px; }
-    .card .value { font-size: 2rem; font-weight: bold; color: #00b4d8; }
+    .card .value { font-size: 2.2rem; font-weight: bold; color: #00b4d8; }
 
-    #map { width: 100%; height: 450px; border-radius: 10px; border: 1px solid #1e2130; }
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
 
-    /* Estilo escuro para os tiles do OpenStreetMap */
-    .dark-tiles {
-      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) sat(0.3) brightness(0.7);
-    }
+    #map { width: 100%; height: 500px; border-radius: 10px; border: 1px solid #1e2130; }
 
-    /* Chat Widget (Suporte aos Dados) */
-    .chat-card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 10px; display: flex; flex-direction: column; height: 600px; }
-    .chat-header { padding: 15px; border-bottom: 1px solid #1e2130; font-weight: bold; color: #00b4d8; display: flex; align-items: center; gap: 8px; }
-    .chat-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.9rem; }
-    .chat-msg { padding: 10px 14px; border-radius: 8px; max-width: 85%; line-height: 1.4; }
-    .chat-msg.bot { background: #1e2130; color: #e6edf3; align-self: flex-start; }
-    .chat-msg.user { background: #00b4d8; color: #0e1117; font-weight: 500; align-self: flex-end; }
-    .chat-footer { padding: 12px; border-top: 1px solid #1e2130; display: flex; gap: 8px; }
-    .chat-footer input { flex: 1; background: #0e1117; border: 1px solid #383848; color: #fff; padding: 10px; border-radius: 6px; outline: none; }
-    .chat-footer button { background: #00b4d8; color: #0e1117; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .incidents-card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+    .incidents-card h2 { font-size: 1.1rem; color: #00b4d8; border-bottom: 1px solid #1e2130; padding-bottom: 10px; }
+    .incident-item { background: #0e1117; padding: 12px; border-radius: 6px; border-left: 4px solid #00b4d8; font-size: 0.88rem; }
+    .incident-item.ALTO { border-left-color: #ff4b4b; }
+    .incident-item.MÉDIO { border-left-color: #ffa726; }
+    .incident-item.BAIXO { border-left-color: #26a69a; }
+    .incident-item .title { font-weight: bold; margin-bottom: 4px; color: #fff; }
+    .incident-item .meta { color: #8b949e; font-size: 0.8rem; }
 
     @media (max-width: 900px) {
-      .container { grid-template-columns: 1fr; }
       .metrics-grid { grid-template-columns: 1fr; }
+      .content-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -54,40 +48,31 @@
   </header>
 
   <div class="container">
-    <div class="main-panel">
-      <div class="metrics-grid">
-        <div class="card">
-          <h3>Semáforos Mapeados</h3>
-          <div class="value" id="val-semaforos">--</div>
-        </div>
-        <div class="card">
-          <h3>Vias Monitoradas</h3>
-          <div class="value" id="val-vias">--</div>
-        </div>
-        <div class="card">
-          <h3>Incidentes Ativos</h3>
-          <div class="value" id="val-incidentes">--</div>
-        </div>
+    <div class="metrics-grid">
+      <div class="card">
+        <h3>Semáforos Mapeados</h3>
+        <div class="value" id="val-semaforos">--</div>
       </div>
-
-      <div class="card" style="padding: 0; overflow: hidden;">
-        <div id="map"></div>
+      <div class="card">
+        <h3>Vias Monitoradas</h3>
+        <div class="value" id="val-vias">--</div>
+      </div>
+      <div class="card">
+        <h3>Incidentes Ativos</h3>
+        <div class="value" id="val-incidentes">--</div>
       </div>
     </div>
 
-    <!-- Widget Suporte aos Dados -->
-    <div class="chat-card">
-      <div class="chat-header">
-        <span>🤖 Suporte aos Dados (IA Local)</span>
+    <div class="content-grid">
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div id="map"></div>
       </div>
-      <div class="chat-body" id="chat-body">
-        <div class="chat-msg bot">
-          Olá! Sou o assistente local do dashboard. Posso responder perguntas sobre os semáforos e incidentes em tempo real.
+
+      <div class="incidents-card">
+        <h2>Ocorrências em Tempo Real</h2>
+        <div id="incidents-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 430px;">
+          <div style="color: #8b949e;">Carregando incidentes...</div>
         </div>
-      </div>
-      <div class="chat-footer">
-        <input type="text" id="chat-input" placeholder="Pergunte sobre os dados..." onkeypress="handleKeyPress(event)" />
-        <button onclick="sendMessage()">Enviar</button>
       </div>
     </div>
   </div>
@@ -95,30 +80,17 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    let PAYLOAD = {};
     let map;
     let markersGroup;
 
-    // Inicializa Mapa
     function initMap() {
-      map = L.map('map').setView([-23.5505, -46.6333], 14);
+      map = L.map('map').setView([-23.5505, -46.6333], 13);
       
-      // Provedor público gratuito sem necessidade de chave (OpenStreetMap com filtro Dark Mode CSS ou Esri World Imagery / Carto)
-      // Opção 1: OpenStreetMap Standard com classe CSS dark-tiles
-      const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        className: 'dark-tiles',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      });
-
-      // Opção 2: Esri Dark Gray Canvas (Público, sem necessidade de API Key)
-      const esriDark = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      // Esri World Dark Gray (Sem API Key)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
         maxZoom: 16
-      });
-
-      // Usando Esri Dark por padrão que é nativamente escuro e 100% gratuito/sem API key
-      esriDark.addTo(map);
+      }).addTo(map);
 
       markersGroup = L.layerGroup().addTo(map);
     }
@@ -126,7 +98,7 @@
     async function loadLiveData() {
       try {
         const res = await fetch('/api/index');
-        PAYLOAD = await res.json();
+        const PAYLOAD = await res.json();
 
         // Atualiza KPIs
         document.getElementById('val-semaforos').innerText = PAYLOAD.summary?.totalSemaforosMapeados || 0;
@@ -134,16 +106,34 @@
         document.getElementById('val-incidentes').innerText = PAYLOAD.summary?.totalIncidentesAtivos || 0;
         document.getElementById('live-status').innerText = '● Ao Vivo (Overpass API)';
 
-        // Plotar Pontos no Mapa
+        // Renderiza Lista de Incidentes
+        const incidentsContainer = document.getElementById('incidents-list');
+        incidentsContainer.innerHTML = '';
+        if (PAYLOAD.incidentes && PAYLOAD.incidentes.length > 0) {
+          PAYLOAD.incidentes.forEach(inc => {
+            const item = document.createElement('div');
+            item.className = `incident-item ${inc.impacto}`;
+            item.innerHTML = `
+              <div class="title">${inc.tipo}</div>
+              <div>${inc.local}</div>
+              <div class="meta">Impacto: ${inc.impacto} | Status: ${inc.status}</div>
+            `;
+            incidentsContainer.appendChild(item);
+          });
+        } else {
+          incidentsContainer.innerHTML = '<div style="color: #8b949e;">Nenhum incidente ativo.</div>';
+        }
+
+        // Plotar Pontos dos Semáforos no Mapa
         markersGroup.clearLayers();
-        if (PAYLOAD.nodes) {
+        if (PAYLOAD.nodes && PAYLOAD.nodes.length > 0) {
           PAYLOAD.nodes.forEach(node => {
             if (node.lat && node.lon) {
               L.circleMarker([node.lat, node.lon], {
-                radius: 6,
+                radius: 5,
                 fillColor: "#00b4d8",
                 color: "#ffffff",
-                weight: 1.5,
+                weight: 1,
                 opacity: 1,
                 fillOpacity: 0.85
               }).bindPopup(`<b>Semáforo ID:</b> ${node.id}`).addTo(markersGroup);
@@ -156,60 +146,10 @@
       }
     }
 
-    // Chat Logic
-    function sendMessage() {
-      const input = document.getElementById('chat-input');
-      const text = input.value.trim();
-      if (!text) return;
-
-      appendMessage(text, 'user');
-      input.value = '';
-
-      setTimeout(() => {
-        const reply = processQuery(text);
-        appendMessage(reply, 'bot');
-      }, 300);
-    }
-
-    function handleKeyPress(e) {
-      if (e.key === 'Enter') sendMessage();
-    }
-
-    function appendMessage(text, sender) {
-      const chatBody = document.getElementById('chat-body');
-      const msg = document.createElement('div');
-      msg.className = `chat-msg ${sender}`;
-      msg.innerText = text;
-      chatBody.appendChild(msg);
-      chatBody.scrollTop = chatBody.scrollHeight;
-    }
-
-    function processQuery(q) {
-      const query = q.toLowerCase();
-      
-      if (query.includes('incidente') || query.includes('problema') || query.includes('atraso')) {
-        if (!PAYLOAD.incidentes || PAYLOAD.incidentes.length === 0) return "Nenhum incidente ativo no momento.";
-        return `Temos ${PAYLOAD.incidentes.length} incidentes registrados: ` + 
-               PAYLOAD.incidentes.map(i => `
-- [${i.impacto}] ${i.tipo} na ${i.local}`).join('');
-      }
-
-      if (query.includes('semáforo') || query.includes('semaforo')) {
-        return `Existem ${PAYLOAD.summary?.totalSemaforosMapeados || 0} semáforos mapeados na região monitorada.`;
-      }
-
-      if (query.includes('via') || query.includes('rua') || query.includes('avenida')) {
-        return `Foram mapeadas ${PAYLOAD.summary?.totalViasPrincipais || 0} vias principais no setor central.`;
-      }
-
-      return "Posso ajudar fornecendo detalhes sobre semáforos, vias mapeadas e incidentes de trânsito em tempo real.";
-    }
-
-    // Start App
     window.onload = () => {
       initMap();
       loadLiveData();
-      setInterval(loadLiveData, 60000); // Atualiza a cada 1 minuto
+      setInterval(loadLiveData, 60000);
     };
   </script>
 </body>

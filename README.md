@@ -1,3 +1,3 @@
 # Monitor de Mobilidade Urbana em Tempo Real
 
-Projeto com mapa escuro Esri Canvas / OpenStreetMap sem necessidade de API key.
+Projeto sem o widget de IA local e com Bounding Box otimizada para exibição de dados em tempo real.
