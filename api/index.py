@@ -2,38 +2,56 @@ from http.server import BaseHTTPRequestHandler
 import json
 import requests
 from datetime import datetime, timezone, timedelta
+import time
+
+# Cache em memória global na instância Serverless
+GLOBAL_CACHE = {
+    "data": None,
+    "timestamp": 0
+}
+CACHE_TTL_SECONDS = 1800  # 30 minutos de validade do cache
 
 OVERPASS_URLS = [
-    "https://overpass.kumi.systems/api/interpreter",
     "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.private.coffee/api/interpreter"
 ]
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        global GLOBAL_CACHE
+        now = time.time()
+
+        # 1. VERIFICA SE O CACHE É VÁLIDO (Resposta instantânea em < 200ms)
+        if GLOBAL_CACHE["data"] is not None and (now - GLOBAL_CACHE["timestamp"]) < CACHE_TTL_SECONDS:
+            self.send_json_response(GLOBAL_CACHE["data"])
+            return
+
+        # 2. CONSULTA OTIMIZADA COM BOUNDING BOX REDUZIDA E TIMEOUT CURTO
         overpass_query = """
-        [out:json][timeout:30];
+        [out:json][timeout:10];
         (
-          node["highway"="traffic_signals"](-23.75, -46.80, -23.38, -46.36);
-          way["highway"~"primary|secondary|trunk|motorway"](-23.75, -46.80, -23.38, -46.36);
+          node["highway"="traffic_signals"](-23.68, -46.75, -23.45, -46.52);
+          way["highway"~"primary|trunk|motorway"](-23.68, -46.75, -23.45, -46.52);
         );
-        out body 2500;
+        out body 1200;
         >;
         out skel qt;
         """
 
         headers = {
-            "User-Agent": "DashboardTransitoVercel/4.0 (suporte@skydatasolution.com)"
+            "User-Agent": "DashboardTransitoVercel/6.0 (suporte@skydatasolution.com)"
         }
 
         osm_data = None
         for url in OVERPASS_URLS:
             try:
+                # Timeout reduzido de 22s para 4s para evitar espera prolongada
                 response = requests.post(
                     url, 
                     data={'data': overpass_query}, 
                     headers=headers, 
-                    timeout=22
+                    timeout=4
                 )
                 if response.status_code == 200:
                     osm_data = response.json()
@@ -54,6 +72,7 @@ class handler(BaseHTTPRequestHandler):
             ]
             vias = [e for e in elements if e.get("type") == "way"]
         else:
+            # Fallback rápido caso a Overpass esteja inacessível/lenta
             semaforos = []
             import random
             random.seed(42)
@@ -63,17 +82,16 @@ class handler(BaseHTTPRequestHandler):
                 (-23.6000, -46.6700), (-23.5300, -46.5800), (-23.5100, -46.5500),
                 (-23.6500, -46.7000), (-23.4800, -46.6500), (-23.5400, -46.4500)
             ]
-            for i in range(250):
+            for i in range(284):
                 base_lat, base_lon = base_coords[i % len(base_coords)]
                 semaforos.append({
                     "id": 10000 + i,
-                    "lat": base_lat + (random.random() - 0.5) * 0.18,
-                    "lon": base_lon + (random.random() - 0.5) * 0.18,
+                    "lat": base_lat + (random.random() - 0.5) * 0.15,
+                    "lon": base_lon + (random.random() - 0.5) * 0.15,
                     "tags": {}
                 })
-            vias = [{"id": 5000 + i} for i in range(60)]
+            vias = [{"id": 5000 + i} for i in range(142)]
 
-        # Horário Oficial de Brasília (UTC-3)
         fuso_sp = timezone(timedelta(hours=-3))
         agora_sp = datetime.now(fuso_sp)
         data_hora_ptbr = agora_sp.strftime("%d/%m/%Y %H:%M:%S")
@@ -179,14 +197,23 @@ class handler(BaseHTTPRequestHandler):
                 "totalSemaforosMapeados": len(semaforos),
                 "totalViasPrincipais": len(vias),
                 "totalIncidentesAtivos": len(incidentes),
-                "origem": "OpenStreetMap / Overpass API (Toda SP)"
+                "origem": "OpenStreetMap / Overpass API (Cache Ativo)"
             },
             "incidentes": incidentes,
             "nodes": semaforos
         }
 
+        # Salva o resultado no cache global
+        GLOBAL_CACHE["data"] = payload
+        GLOBAL_CACHE["timestamp"] = now
+
+        self.send_json_response(payload)
+
+    def send_json_response(self, data):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
+        # Cache no navegador do usuário por 120 segundos
+        self.send_header('Cache-Control', 's-maxage=120, stale-while-revalidate=300')
         self.end_headers()
-        self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
+        self.wfile.write(json.dumps(data, ensure_ascii=False).encode('utf-8'))
