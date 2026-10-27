@@ -37,7 +37,7 @@ class handler(BaseHTTPRequestHandler):
         """
 
         headers = {
-            "User-Agent": "DashboardTransitoVercel/6.0 (suporte@skydatasolution.com)"
+            "User-Agent": "DashboardTransitoVercel/7.0 (suporte@skydatasolution.com)"
         }
 
         osm_data = None

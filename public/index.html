@@ -88,26 +88,7 @@
     
     .incident-item .meta { color: #8b949e; font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1e2130; padding-top: 8px; margin-top: 4px; }
     .incident-item .meta .time-tag { color: #00b4d8; font-weight: 600; }
-    
-    .incident-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-    .btn-cam { background: rgba(0, 180, 216, 0.15); border: 1px solid #00b4d8; color: #00b4d8; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-    .btn-cam:hover { background: #00b4d8; color: #0e1117; }
-
-    /* Modal de Câmera CET-SP */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
-    .modal-overlay.open { display: flex; }
-    .modal-cam-box { background: #16213e; border: 1px solid #00b4d8; border-radius: 12px; width: min(700px, 100%); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .modal-cam-header { padding: 14px 18px; background: #0e1117; border-bottom: 1px solid #1e2130; display: flex; justify-content: space-between; align-items: center; }
-    .modal-cam-header h3 { font-size: 1rem; color: #00b4d8; display: flex; align-items: center; gap: 8px; }
-    .modal-cam-close { background: none; border: none; color: #ff4b4b; font-size: 1.4rem; cursor: pointer; }
-    .modal-cam-body { padding: 20px; display: flex; flex-direction: column; gap: 15px; text-align: center; }
-    .cam-feed-container { position: relative; width: 100%; height: 360px; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #383848; }
-    .cam-hud-overlay { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-family: monospace; font-size: 0.75rem; color: #00ff66; text-shadow: 0 0 4px #000; z-index: 10; pointer-events: none; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; }
-    .cam-hud-rec { display: flex; align-items: center; gap: 6px; }
-    .cam-hud-rec-dot { width: 8px; height: 8px; background: red; border-radius: 50%; animation: pulse 1s infinite; }
-    
-    .btn-cet-official { background: #00b4d8; color: #0e1117; padding: 10px 16px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
-    .btn-cet-official:hover { background: #33c4e3; }
+    .click-hint { font-size: 0.75rem; color: #00b4d8; font-weight: 600; display: block; margin-top: 8px; text-align: right; }
 
     @media (max-width: 1200px) {
       .filters-row { grid-template-columns: 1fr 1fr 1fr; }
@@ -126,7 +107,7 @@
   <header>
     <div class="header-title">
       <h1>Monitor de Mobilidade & Trânsito Urbano</h1>
-      <p>Mapeamento de tráfego, semáforos, incidentes e monitoramento CET-SP em toda a cidade de São Paulo</p>
+      <p>Mapeamento de tráfego, semáforos e incidentes em toda a cidade de São Paulo</p>
     </div>
     <div class="status-badge" id="live-status">
       <span class="status-dot"></span>
@@ -243,35 +224,6 @@
     </div>
   </div>
 
-  <!-- Modal de Câmera CET-SP -->
-  <div class="modal-overlay" id="cam-modal">
-    <div class="modal-cam-box">
-      <div class="modal-cam-header">
-        <h3 id="cam-modal-title">📷 Câmera CET-SP / Snapshot ao Vivo</h3>
-        <button class="modal-cam-close" onclick="closeCamModal()">✕</button>
-      </div>
-      <div class="modal-cam-body">
-        <div class="cam-feed-container">
-          <div class="cam-hud-overlay">
-            <div class="cam-hud-rec"><span class="cam-hud-rec-dot"></span> SNAPSHOT CET-SP (LIVE)</div>
-            <div id="cam-hud-time">--:--:--</div>
-            <div id="cam-hud-id">CAM-SP-042</div>
-          </div>
-          
-          <img id="cam-snapshot-img" src="" alt="Câmera de Trânsito em Tempo Real" style="width:100%; height:100%; object-fit:cover;">
-        </div>
-        <p style="font-size: 0.85rem; color: #8b949e;" id="cam-modal-desc">
-          Monitoramento do trecho via central de tráfego. O snapshot é recarregado automaticamente a cada 5 segundos.
-        </p>
-        <div>
-          <a class="btn-cet-official" id="cam-official-link" href="https://www.cetsp.com.br/" target="_blank" rel="noopener">
-            🌐 Abrir Portal Oficial da CET-SP ↗
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Leaflet JS & MarkerCluster JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
@@ -282,31 +234,6 @@
     let incidentLayersGroup;
     let rawPayload = null;
     let incidentMarkersMap = {};
-    let camTimer = null;
-
-    // Imagens reais de cruzamentos de vias públicas e semáforos urbanos ao nível da rua
-    const CAM_IMAGES = {
-      // Av. Rebouças x Rua Oscar Freire - Corredor de ônibus urbano e semáforo
-      'INC-8812': 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80',
-      
-      // Marginal Pinheiros x Ponte Cidade Jardim - Tráfego de via expressa
-      'INC-8815': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80',
-      
-      // Av. Prof. Luiz Ignacio Anhaia Mello x Salim Farah Maluf - Semáforo de cruzamento
-      'INC-8816': 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80',
-      
-      // Av. Paulista (Consolação) - Cruzamento com semáforo
-      'INC-8813': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
-      
-      // Av. Cruzeiro do Sul x Av. Estado - Corredor urbano
-      'INC-8817': 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80',
-      
-      // Av. do Estado - Tráfego urbano
-      'INC-8814': 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=800&q=80',
-      
-      // Av. Interlagos x Washington Luís - Semáforo
-      'INC-8818': 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'
-    };
 
     function initMap() {
       map = L.map('map', { zoomControl: true }).setView([-23.5505, -46.6333], 11);
@@ -421,18 +348,15 @@
             opacity: 1,
             fillOpacity: 0.95
           }).bindPopup(`
-            <div style="color: #0e1117; font-family: sans-serif; min-width: 200px;">
+            <div style="color: #0e1117; font-family: sans-serif; min-width: 180px;">
               <span style="background: ${color}; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">
                 ${inc.impacto} IMPACTO
               </span>
               <h4 style="margin: 6px 0 2px 0; font-size: 0.95rem;">${inc.tipo}</h4>
               <p style="margin: 0; font-size: 0.8rem; color: #333;">📍 ${inc.local}</p>
-              <p style="margin: 4px 0 8px 0; font-size: 0.75rem; color: #555;">
+              <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #555;">
                 Zona: <strong>${inc.zona}</strong> | Atraso: <strong>${inc.tempoAtraso}</strong>
               </p>
-              <button onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')" style="background: #00b4d8; color: #0e1117; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.78rem; cursor: pointer; width: 100%;">
-                📷 Ver Câmera do Local
-              </button>
             </div>
           `);
 
@@ -475,11 +399,7 @@
       incidentes.forEach(inc => {
         const item = document.createElement('div');
         item.className = `incident-item ${inc.impacto}`;
-        item.onclick = (e) => {
-          if (!e.target.classList.contains('btn-cam')) {
-            focusIncidentOnMap(inc.id);
-          }
-        };
+        item.onclick = () => focusIncidentOnMap(inc.id);
 
         item.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -493,10 +413,7 @@
             <span>Atraso: <strong>${inc.tempoAtraso || '--'}</strong></span>
             <span class="time-tag">🕒 ${inc.updatedAt ? inc.updatedAt.split(' ')[1] : ''}</span>
           </div>
-          <div class="incident-actions">
-            <button class="btn-cam" onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')">📷 Ver Câmera</button>
-            <span class="click-hint">Clique para focar no mapa 🎯</span>
-          </div>
+          <span class="click-hint">Clique para focar no mapa 🎯</span>
         `;
         container.appendChild(item);
       });
@@ -508,33 +425,6 @@
         map.flyTo([target.lat, target.lon], 16, { animate: true, duration: 1.2 });
         setTimeout(() => { target.marker.openPopup(); }, 1200);
       }
-    }
-
-    function openCamModal(tipo, local, id) {
-      document.getElementById('cam-modal-title').innerText = `📷 Câmera CET-SP: ${tipo}`;
-      document.getElementById('cam-modal-desc').innerText = `Monitoramento do trecho: ${local}. Câmera ID: ${id}. Snapshot atualizado a cada 5s.`;
-      document.getElementById('cam-hud-id').innerText = `${id}`;
-      document.getElementById('cam-hud-time').innerText = new Date().toLocaleTimeString('pt-BR');
-      
-      document.getElementById('cam-official-link').href = `https://www.cetsp.com.br/`;
-
-      const imgEl = document.getElementById('cam-snapshot-img');
-      const baseImg = CAM_IMAGES[id] || 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80';
-      
-      imgEl.src = `${baseImg}&t=${Date.now()}`;
-
-      document.getElementById('cam-modal').classList.add('open');
-
-      clearInterval(camTimer);
-      camTimer = setInterval(() => {
-        document.getElementById('cam-hud-time').innerText = new Date().toLocaleTimeString('pt-BR');
-        imgEl.src = `${baseImg}&t=${Date.now()}`;
-      }, 5000);
-    }
-
-    function closeCamModal() {
-      clearInterval(camTimer);
-      document.getElementById('cam-modal').classList.remove('open');
     }
 
     function updateActiveChips() {
