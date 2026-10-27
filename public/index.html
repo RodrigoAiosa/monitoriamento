@@ -102,7 +102,7 @@
     .modal-cam-close { background: none; border: none; color: #ff4b4b; font-size: 1.4rem; cursor: pointer; }
     .modal-cam-body { padding: 20px; display: flex; flex-direction: column; gap: 15px; text-align: center; }
     .cam-feed-container { position: relative; width: 100%; height: 360px; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #383848; }
-    .cam-hud-overlay { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-family: monospace; font-size: 0.75rem; color: #00ff66; text-shadow: 0 0 4px #000; z-index: 10; pointer-events: none; }
+    .cam-hud-overlay { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-family: monospace; font-size: 0.75rem; color: #00ff66; text-shadow: 0 0 4px #000; z-index: 10; pointer-events: none; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; }
     .cam-hud-rec { display: flex; align-items: center; gap: 6px; }
     .cam-hud-rec-dot { width: 8px; height: 8px; background: red; border-radius: 50%; animation: pulse 1s infinite; }
     
@@ -247,29 +247,21 @@
   <div class="modal-overlay" id="cam-modal">
     <div class="modal-cam-box">
       <div class="modal-cam-header">
-        <h3 id="cam-modal-title">📷 Câmera CET-SP / Monitoramento ao Vivo</h3>
+        <h3 id="cam-modal-title">📷 Câmera CET-SP / Snapshot ao Vivo</h3>
         <button class="modal-cam-close" onclick="closeCamModal()">✕</button>
       </div>
       <div class="modal-cam-body">
         <div class="cam-feed-container">
           <div class="cam-hud-overlay">
-            <div class="cam-hud-rec"><span class="cam-hud-rec-dot"></span> LIVE CET-SP / CFTV</div>
+            <div class="cam-hud-rec"><span class="cam-hud-rec-dot"></span> SNAPSHOT CET-SP (LIVE)</div>
             <div id="cam-hud-time">--:--:--</div>
             <div id="cam-hud-id">CAM-SP-042</div>
           </div>
           
-          <iframe 
-            id="cam-video-frame"
-            src="about:blank"
-            width="100%" 
-            height="100%" 
-            style="border:0;" 
-            allow="autoplay; encrypted-media" 
-            allowfullscreen>
-          </iframe>
+          <img id="cam-snapshot-img" src="" alt="Câmera de Trânsito em Tempo Real" style="width:100%; height:100%; object-fit:cover;">
         </div>
         <p style="font-size: 0.85rem; color: #8b949e;" id="cam-modal-desc">
-          Monitoramento em tempo real do trecho urbano.
+          Monitoramento do trecho via central de tráfego. O snapshot é recarregado automaticamente a cada 5 segundos.
         </p>
         <div>
           <a class="btn-cet-official" id="cam-official-link" href="https://www.cetsp.com.br/" target="_blank" rel="noopener">
@@ -290,6 +282,17 @@
     let incidentLayersGroup;
     let rawPayload = null;
     let incidentMarkersMap = {};
+    let camTimer = null;
+
+    const CAM_IMAGES = {
+      'INC-8812': 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80', // Rebouças x Oscar Freire
+      'INC-8815': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // Marginal Pinheiros
+      'INC-8816': 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80', // Anhaia Mello
+      'INC-8813': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80', // Av. Paulista
+      'INC-8817': 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80', // Cruzeiro do Sul
+      'INC-8814': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // Av. do Estado
+      'INC-8818': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80'  // Interlagos
+    };
 
     function initMap() {
       map = L.map('map', { zoomControl: true }).setView([-23.5505, -46.6333], 11);
@@ -414,7 +417,7 @@
                 Zona: <strong>${inc.zona}</strong> | Atraso: <strong>${inc.tempoAtraso}</strong>
               </p>
               <button onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')" style="background: #00b4d8; color: #0e1117; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.78rem; cursor: pointer; width: 100%;">
-                📷 Ver Câmera do Local
+                📷 Ver Snapshot do Local
               </button>
             </div>
           `);
@@ -477,7 +480,7 @@
             <span class="time-tag">🕒 ${inc.updatedAt ? inc.updatedAt.split(' ')[1] : ''}</span>
           </div>
           <div class="incident-actions">
-            <button class="btn-cam" onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')">📷 Ver Câmera</button>
+            <button class="btn-cam" onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')">📷 Ver Snapshot</button>
             <span class="click-hint">Clique para focar no mapa 🎯</span>
           </div>
         `;
@@ -494,22 +497,29 @@
     }
 
     function openCamModal(tipo, local, id) {
-      document.getElementById('cam-modal-title').innerText = `📷 Câmera de Trânsito: ${tipo}`;
-      document.getElementById('cam-modal-desc').innerText = `Monitoramento ao vivo do trecho: ${local}. Câmera ID: ${id}.`;
+      document.getElementById('cam-modal-title').innerText = `📷 Câmera CET-SP: ${tipo}`;
+      document.getElementById('cam-modal-desc').innerText = `Monitoramento do trecho: ${local}. Câmera ID: ${id}. Snapshot atualizado a cada 5s.`;
       document.getElementById('cam-hud-id').innerText = `${id}`;
       document.getElementById('cam-hud-time').innerText = new Date().toLocaleTimeString('pt-BR');
       
       document.getElementById('cam-official-link').href = `https://www.cetsp.com.br/`;
 
-      const videoFrame = document.getElementById('cam-video-frame');
-      videoFrame.src = "https://www.youtube-nocookie.com/embed/1EiC9bvVGnk?autoplay=1&mute=1&controls=0&loop=1&playlist=1EiC9bvVGnk";
+      const imgEl = document.getElementById('cam-snapshot-img');
+      const baseImg = CAM_IMAGES[id] || 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80';
+      
+      imgEl.src = `${baseImg}&t=${Date.now()}`;
 
       document.getElementById('cam-modal').classList.add('open');
+
+      clearInterval(camTimer);
+      camTimer = setInterval(() => {
+        document.getElementById('cam-hud-time').innerText = new Date().toLocaleTimeString('pt-BR');
+        imgEl.src = `${baseImg}&t=${Date.now()}`;
+      }, 5000);
     }
 
     function closeCamModal() {
-      const videoFrame = document.getElementById('cam-video-frame');
-      videoFrame.src = "about:blank";
+      clearInterval(camTimer);
       document.getElementById('cam-modal').classList.remove('open');
     }
 
@@ -542,7 +552,7 @@
       }
 
       if (count === 0) {
-        container.innerHTML = '<span style="color: #6c757d; font-style: italic;">Nenhum filtro aplicado</span>';
+        container.innerHTML = '<span style="color: #6c757d; font-style: italic;">Nenhum filtro applied</span>';
       }
     }
 

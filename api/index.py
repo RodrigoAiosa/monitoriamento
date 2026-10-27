@@ -8,7 +8,7 @@ GLOBAL_CACHE = {
     "data": None,
     "timestamp": 0
 }
-CACHE_TTL_SECONDS = 1800  # 30 minutos
+CACHE_TTL_SECONDS = 1800
 
 OVERPASS_URLS = [
     "https://overpass-api.de/api/interpreter",
