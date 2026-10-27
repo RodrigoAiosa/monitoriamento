@@ -1,3 +1,3 @@
 # Monitor de Mobilidade Urbana em Tempo Real - SP
 
-Atualizado com Snapshots dinâmicos de tráfego, auto-refresh a cada 5s e portal oficial CET-SP.
+Versão final com fotos de semáforos e vias urbanas de tráfego ao nível da rua.

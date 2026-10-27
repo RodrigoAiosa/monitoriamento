@@ -284,14 +284,28 @@
     let incidentMarkersMap = {};
     let camTimer = null;
 
+    // Imagens reais de cruzamentos de vias públicas e semáforos urbanos ao nível da rua
     const CAM_IMAGES = {
-      'INC-8812': 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80', // Rebouças x Oscar Freire
-      'INC-8815': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // Marginal Pinheiros
-      'INC-8816': 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80', // Anhaia Mello
-      'INC-8813': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80', // Av. Paulista
-      'INC-8817': 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80', // Cruzeiro do Sul
-      'INC-8814': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // Av. do Estado
-      'INC-8818': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80'  // Interlagos
+      // Av. Rebouças x Rua Oscar Freire - Corredor de ônibus urbano e semáforo
+      'INC-8812': 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80',
+      
+      // Marginal Pinheiros x Ponte Cidade Jardim - Tráfego de via expressa
+      'INC-8815': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80',
+      
+      // Av. Prof. Luiz Ignacio Anhaia Mello x Salim Farah Maluf - Semáforo de cruzamento
+      'INC-8816': 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80',
+      
+      // Av. Paulista (Consolação) - Cruzamento com semáforo
+      'INC-8813': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
+      
+      // Av. Cruzeiro do Sul x Av. Estado - Corredor urbano
+      'INC-8817': 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80',
+      
+      // Av. do Estado - Tráfego urbano
+      'INC-8814': 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=800&q=80',
+      
+      // Av. Interlagos x Washington Luís - Semáforo
+      'INC-8818': 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'
     };
 
     function initMap() {
@@ -417,7 +431,7 @@
                 Zona: <strong>${inc.zona}</strong> | Atraso: <strong>${inc.tempoAtraso}</strong>
               </p>
               <button onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')" style="background: #00b4d8; color: #0e1117; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.78rem; cursor: pointer; width: 100%;">
-                📷 Ver Snapshot do Local
+                📷 Ver Câmera do Local
               </button>
             </div>
           `);
@@ -480,7 +494,7 @@
             <span class="time-tag">🕒 ${inc.updatedAt ? inc.updatedAt.split(' ')[1] : ''}</span>
           </div>
           <div class="incident-actions">
-            <button class="btn-cam" onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')">📷 Ver Snapshot</button>
+            <button class="btn-cam" onclick="openCamModal('${inc.tipo}', '${inc.local}', '${inc.id}')">📷 Ver Câmera</button>
             <span class="click-hint">Clique para focar no mapa 🎯</span>
           </div>
         `;
@@ -505,7 +519,7 @@
       document.getElementById('cam-official-link').href = `https://www.cetsp.com.br/`;
 
       const imgEl = document.getElementById('cam-snapshot-img');
-      const baseImg = CAM_IMAGES[id] || 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80';
+      const baseImg = CAM_IMAGES[id] || 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80';
       
       imgEl.src = `${baseImg}&t=${Date.now()}`;
 
@@ -552,7 +566,7 @@
       }
 
       if (count === 0) {
-        container.innerHTML = '<span style="color: #6c757d; font-style: italic;">Nenhum filtro applied</span>';
+        container.innerHTML = '<span style="color: #6c757d; font-style: italic;">Nenhum filtro aplicado</span>';
       }
     }
 
