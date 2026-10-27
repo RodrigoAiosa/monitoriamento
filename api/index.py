@@ -6,7 +6,6 @@ OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Query Overpass QL: Busca semáforos e vias na Bounding Box (Região Central de SP)
         overpass_query = """
         [out:json][timeout:25];
         (
@@ -35,7 +34,6 @@ class handler(BaseHTTPRequestHandler):
             semaforos = [e for e in elements if e.get("type") == "node"]
             vias = [e for e in elements if e.get("type") == "way"]
 
-            # Exemplo de enriquecimento de dados de incidentes para o chat e mapa
             incidentes = [
                 {
                     "id": "INC-8812",

@@ -24,6 +24,11 @@
 
     #map { width: 100%; height: 450px; border-radius: 10px; border: 1px solid #1e2130; }
 
+    /* Estilo escuro para os tiles do OpenStreetMap */
+    .dark-tiles {
+      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) sat(0.3) brightness(0.7);
+    }
+
     /* Chat Widget (Suporte aos Dados) */
     .chat-card { background-color: #16213e; border: 1px solid #1e2130; border-radius: 10px; display: flex; flex-direction: column; height: 600px; }
     .chat-header { padding: 15px; border-bottom: 1px solid #1e2130; font-weight: bold; color: #00b4d8; display: flex; align-items: center; gap: 8px; }
@@ -97,9 +102,24 @@
     // Inicializa Mapa
     function initMap() {
       map = L.map('map').setView([-23.5505, -46.6333], 14);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO'
-      }).addTo(map);
+      
+      // Provedor público gratuito sem necessidade de chave (OpenStreetMap com filtro Dark Mode CSS ou Esri World Imagery / Carto)
+      // Opção 1: OpenStreetMap Standard com classe CSS dark-tiles
+      const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        className: 'dark-tiles',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      });
+
+      // Opção 2: Esri Dark Gray Canvas (Público, sem necessidade de API Key)
+      const esriDark = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+        maxZoom: 16
+      });
+
+      // Usando Esri Dark por padrão que é nativamente escuro e 100% gratuito/sem API key
+      esriDark.addTo(map);
+
       markersGroup = L.layerGroup().addTo(map);
     }
 
@@ -120,12 +140,12 @@
           PAYLOAD.nodes.forEach(node => {
             if (node.lat && node.lon) {
               L.circleMarker([node.lat, node.lon], {
-                radius: 5,
+                radius: 6,
                 fillColor: "#00b4d8",
-                color: "#fff",
-                weight: 1,
+                color: "#ffffff",
+                weight: 1.5,
                 opacity: 1,
-                fillOpacity: 0.8
+                fillOpacity: 0.85
               }).bindPopup(`<b>Semáforo ID:</b> ${node.id}`).addTo(markersGroup);
             }
           });
